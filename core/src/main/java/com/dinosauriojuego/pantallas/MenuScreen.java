@@ -14,7 +14,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.dinosauriojuego.DinosaurioChromePrincipal;
 
 /**
- * Pantalla de menú principal
+ * Pantalla de menú principal con opción de juego local y multijugador
  */
 public class MenuScreen implements Screen {
     private DinosaurioChromePrincipal game;
@@ -35,18 +35,18 @@ public class MenuScreen implements Screen {
         titulo.setFontScale(6.0f);
         titulo.setColor(Color.BLACK);
         titulo.setPosition(
-            (1200 - titulo.getWidth() * 6.0f) / 2,
-            500
+                (1200 - titulo.getWidth() * 6.0f) / 2,
+                550
         );
         stage.addActor(titulo);
 
-        // Botón JUGAR
-        TextButton botonJugar = new TextButton("JUGAR", skin, "default");
+        // Botón JUGAR (Local)
+        TextButton botonJugar = new TextButton("JUGAR LOCAL", skin, "default");
         botonJugar.getLabel().setFontScale(3.0f);
-        botonJugar.setSize(300, 80);
+        botonJugar.setSize(400, 80);
         botonJugar.setPosition(
-            (1200 - 300) / 2,
-            320
+                (1200 - 400) / 2,
+                380
         );
         botonJugar.addListener(new ClickListener() {
             @Override
@@ -56,13 +56,29 @@ public class MenuScreen implements Screen {
         });
         stage.addActor(botonJugar);
 
+        // Botón MULTIJUGADOR
+        TextButton botonMultijugador = new TextButton("MULTIJUGADOR", skin, "default");
+        botonMultijugador.getLabel().setFontScale(3.0f);
+        botonMultijugador.setSize(400, 80);
+        botonMultijugador.setPosition(
+                (1200 - 400) / 2,
+                280
+        );
+        botonMultijugador.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                game.iniciarMultijugador();
+            }
+        });
+        stage.addActor(botonMultijugador);
+
         // Botón SALIR
         TextButton botonSalir = new TextButton("SALIR", skin, "default");
         botonSalir.getLabel().setFontScale(3.0f);
-        botonSalir.setSize(300, 80);
+        botonSalir.setSize(400, 80);
         botonSalir.setPosition(
-            (1200 - 300) / 2,
-            200
+                (1200 - 400) / 2,
+                180
         );
         botonSalir.addListener(new ClickListener() {
             @Override

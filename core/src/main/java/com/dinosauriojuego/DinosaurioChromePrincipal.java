@@ -3,16 +3,19 @@ package com.dinosauriojuego;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.dinosauriojuego.network.HiloClienteDino;
 import com.dinosauriojuego.pantallas.DinosaurioGameScreen;
 import com.dinosauriojuego.pantallas.MenuScreen;
+import com.dinosauriojuego.pantallas.PantallaEspera;
 
 /**
- * Clase principal de la aplicación
+ * Clase principal de la aplicación con soporte para modo local y multijugador
  */
 public class DinosaurioChromePrincipal extends Game {
     private Skin skin;
     private MenuScreen menuScreen;
     private DinosaurioGameScreen gameScreen;
+    private HiloClienteDino clienteRed;
 
     @Override
     public void create() {
@@ -21,6 +24,9 @@ public class DinosaurioChromePrincipal extends Game {
         setScreen(menuScreen);
     }
 
+    /**
+     * Inicia el juego en modo local (2 jugadores en la misma pantalla)
+     */
     public void iniciarJuego() {
         if (gameScreen != null) {
             gameScreen.dispose();
@@ -29,7 +35,33 @@ public class DinosaurioChromePrincipal extends Game {
         setScreen(gameScreen);
     }
 
+    /**
+     * Inicia el modo multijugador online
+     */
+    public void iniciarMultijugador() {
+        // Cerrar cliente anterior si existe
+        if (clienteRed != null) {
+            clienteRed.cerrar();
+        }
+
+        // Crear nuevo cliente de red
+        clienteRed = new HiloClienteDino();
+        clienteRed.start();
+
+        // Ir a pantalla de espera
+        setScreen(new PantallaEspera(this, skin, clienteRed));
+    }
+
+    /**
+     * Vuelve al menú principal
+     */
     public void volverAlMenu() {
+        // Cerrar conexión de red si existe
+        if (clienteRed != null) {
+            clienteRed.cerrar();
+            clienteRed = null;
+        }
+
         setScreen(menuScreen);
     }
 
@@ -43,6 +75,9 @@ public class DinosaurioChromePrincipal extends Game {
         }
         if (gameScreen != null) {
             gameScreen.dispose();
+        }
+        if (clienteRed != null) {
+            clienteRed.cerrar();
         }
     }
 }

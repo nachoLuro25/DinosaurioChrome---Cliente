@@ -314,7 +314,7 @@ public class DinosaurioGameScreen implements Screen {
             mouseY *= factorY;
 
             if (mouseX >= botonReiniciarX && mouseX <= botonReiniciarX + botonReiniciarAncho &&
-                mouseY >= botonReiniciarY && mouseY <= botonReiniciarY + botonReiniciarAlto) {
+                    mouseY >= botonReiniciarY && mouseY <= botonReiniciarY + botonReiniciarAlto) {
                 reiniciarJuego();
             }
         }
@@ -472,7 +472,7 @@ public class DinosaurioGameScreen implements Screen {
 
     private void handleInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.W) ||
-            Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+                Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             saltoJ1Pendiente = true;
             // Reproducir sonido si el dinosaurio puede saltar
             if (!gameJugador1.getDinosaurio().estaSaltando() && !gameJugador1.getDinosaurio().estaAgachado() && sonidoSalto != null) {

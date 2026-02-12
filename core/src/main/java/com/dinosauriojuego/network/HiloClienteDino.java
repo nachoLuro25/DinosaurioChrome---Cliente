@@ -8,34 +8,49 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Hilo del cliente para comunicación UDP con el servidor del juego
- * Basado en la arquitectura de MatiasLeanza con mejoras
+ * CORREGIDO: Mantiene el mismo puerto para todos los mensajes
  */
 public class HiloClienteDino extends Thread {
 
     private DatagramSocket socket;
     private InetAddress ipServidor;
     private final int puertoServidor = 8999;
+    private int puertoLocal; // ✅ Guardar el puerto local asignado
 
     private volatile boolean finalizar = false;
     private volatile ClienteListener listener;
 
     /**
-     * Constructor - Inicializa el socket UDP y busca el servidor por broadcast
+     * Constructor - Inicializa el socket UDP y busca el servidor
      */
     public HiloClienteDino() {
+        super("ClienteUDP-Thread");
         try {
-            // Usar broadcast para encontrar servidor en la red local
-            ipServidor = InetAddress.getByName("255.255.255.255");
+            // ✅ Crear socket con puerto fijo
             socket = new DatagramSocket();
-            socket.setBroadcast(true);
-            socket.setSoTimeout(0); // Sin timeout
+            puertoLocal = socket.getLocalPort(); // ✅ Guardar el puerto asignado
+            socket.setSoTimeout(100); // Timeout razonable
 
-            System.out.println("🌐 Cliente UDP creado. Buscando servidor...");
+            System.out.println("🌐 Cliente UDP creado en puerto local: " + puertoLocal);
+
+            // Intentar habilitar broadcast para encontrar servidor
+            try {
+                socket.setBroadcast(true);
+                ipServidor = InetAddress.getByName("255.255.255.255");
+                System.out.println("📡 Buscando servidor en broadcast...");
+            } catch (java.net.SocketException e) {
+                // Si broadcast falla, intentar con localhost
+                System.err.println("⚠️ No se pudo habilitar broadcast: " + e.getMessage());
+                System.out.println("📡 Buscando servidor en localhost...");
+                ipServidor = InetAddress.getByName("localhost");
+            }
 
             // Enviar mensaje inicial de conexión
             enviarMensaje("Conexion");
+
         } catch (Exception e) {
             System.err.println("❌ Error al crear cliente: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
@@ -57,16 +72,26 @@ public class HiloClienteDino extends Thread {
     }
 
     /**
-     * Envía un mensaje al servidor
+     * Envía un mensaje al servidor usando SIEMPRE el mismo socket
      */
     private void enviarMensaje(String mensaje) {
+        if (socket == null || socket.isClosed()) {
+            System.err.println("⚠️ Socket cerrado, no se puede enviar: " + mensaje);
+            return;
+        }
+
         try {
             byte[] datos = mensaje.getBytes(StandardCharsets.UTF_8);
             DatagramPacket paquete = new DatagramPacket(datos, datos.length, ipServidor, puertoServidor);
+
+            // ✅ IMPORTANTE: Usar el MISMO socket para todos los mensajes
             socket.send(paquete);
-            // System.out.println("📤 Enviado: " + mensaje);
+
+            // System.out.println("📤 [Puerto " + puertoLocal + "] Enviado: " + mensaje);
         } catch (Exception e) {
-            System.err.println("❌ Error al enviar mensaje: " + e.getMessage());
+            if (!finalizar) {
+                System.err.println("❌ Error al enviar mensaje: " + e.getMessage());
+            }
         }
     }
 
@@ -80,6 +105,8 @@ public class HiloClienteDino extends Thread {
                 DatagramPacket paquete = new DatagramPacket(buffer, buffer.length);
                 socket.receive(paquete);
                 procesarMensaje(paquete);
+            } catch (java.net.SocketTimeoutException e) {
+                // Timeout normal, continuar
             } catch (Exception e) {
                 if (!finalizar) {
                     System.err.println("⚠️ Error al recibir paquete: " + e.getMessage());
@@ -100,9 +127,19 @@ public class HiloClienteDino extends Thread {
 
         // Mensaje de confirmación de conexión
         if (mensaje.equals("OK")) {
+            // ✅ Actualizar IP del servidor (ya no es broadcast)
             ipServidor = paquete.getAddress();
+
+            // ✅ Desactivar broadcast después de conectar
+            try {
+                socket.setBroadcast(false);
+            } catch (java.net.SocketException e) {
+                System.err.println("⚠️ Error al desactivar broadcast: " + e.getMessage());
+                // No es crítico, continuar
+            }
+
             ClienteEstado.conectado = true;
-            System.out.println("✅ Conectado al servidor: " + ipServidor);
+            System.out.println("✅ Conectado al servidor: " + ipServidor + " (desde puerto local " + puertoLocal + ")");
             notificarConectadoSeguro();
             return;
         }
@@ -134,12 +171,6 @@ public class HiloClienteDino extends Thread {
 
     /**
      * Parsea un snapshot recibido del servidor y actualiza el estado del cliente
-     *
-     * Formato del snapshot:
-     * SNAP;tick;puntuacion;velocidad;juegoIniciado;juegoTerminado;mensajeFinJuego;jugadoresListosReset;
-     * j1.y;j1.enSuelo;j1.agachado;j1.vivo;
-     * j2.y;j2.enSuelo;j2.agachado;j2.vivo;
-     * numObstaculos;[tipo;variante;x;y]...
      */
     private boolean parsearSnapshot(String mensaje) {
         try {
@@ -246,6 +277,7 @@ public class HiloClienteDino extends Thread {
      */
     public void enviarListo() {
         enviarMensaje("Listo");
+        System.out.println("📤 Enviando señal de listo desde puerto " + puertoLocal);
     }
 
     /**
@@ -271,6 +303,16 @@ public class HiloClienteDino extends Thread {
     public void setIpServidor(String ip) {
         try {
             this.ipServidor = InetAddress.getByName(ip);
+
+            // Desactivar broadcast si se configura IP manual
+            if (socket != null) {
+                try {
+                    socket.setBroadcast(false);
+                } catch (java.net.SocketException e) {
+                    System.err.println("⚠️ Error al desactivar broadcast: " + e.getMessage());
+                }
+            }
+
             System.out.println("🌐 IP del servidor actualizada: " + ip);
         } catch (Exception e) {
             System.err.println("❌ IP inválida: " + e.getMessage());
@@ -281,7 +323,7 @@ public class HiloClienteDino extends Thread {
      * Cierra el cliente y libera recursos
      */
     public void cerrar() {
-        System.out.println("🛑 Cerrando cliente...");
+        System.out.println("🛑 Cerrando cliente desde puerto " + puertoLocal + "...");
 
         finalizar = true;
 

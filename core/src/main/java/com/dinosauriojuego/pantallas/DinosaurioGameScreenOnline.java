@@ -353,7 +353,7 @@ public class DinosaurioGameScreenOnline implements Screen, ClienteListener {
         if (texturaDino != null) {
             batch.setColor(colorJugador);
             // Altura fija para dinosaurio
-            float altoDino = 60;
+            float altoDino = dino.agachado ? 30 : 60;  // Mitad de altura cuando está agachado
             float anchoDino = 50;
             batch.draw(texturaDino, 50, dino.y, anchoDino, altoDino);
             batch.setColor(Color.WHITE);

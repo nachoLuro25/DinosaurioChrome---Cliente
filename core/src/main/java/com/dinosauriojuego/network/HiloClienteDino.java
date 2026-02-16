@@ -8,8 +8,7 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Hilo del cliente para comunicación UDP con el servidor del juego
- * CORREGIDO: Mantiene el mismo puerto para todos los mensajes
- */
+ * Mantiene el mismo puerto para todos los mensajes*/
 public class HiloClienteDino extends Thread {
 
     private DatagramSocket socket;
@@ -20,9 +19,7 @@ public class HiloClienteDino extends Thread {
     private volatile boolean finalizar = false;
     private volatile ClienteListener listener;
 
-    /**
-     * Constructor - Inicializa el socket UDP y busca el servidor
-     */
+    /*** Constructor - Inicializa el socket UDP y busca el servidor*/
     public HiloClienteDino() {
         super("ClienteUDP-Thread");
         try {
@@ -71,9 +68,7 @@ public class HiloClienteDino extends Thread {
         }
     }
 
-    /**
-     * Envía un mensaje al servidor usando SIEMPRE el mismo socket
-     */
+    /*** Envía un mensaje al servidor usando SIEMPRE el mismo socket*/
     private void enviarMensaje(String mensaje) {
         if (socket == null || socket.isClosed()) {
             System.err.println("⚠️ Socket cerrado, no se puede enviar: " + mensaje);
@@ -84,10 +79,8 @@ public class HiloClienteDino extends Thread {
             byte[] datos = mensaje.getBytes(StandardCharsets.UTF_8);
             DatagramPacket paquete = new DatagramPacket(datos, datos.length, ipServidor, puertoServidor);
 
-            // ✅ IMPORTANTE: Usar el MISMO socket para todos los mensajes
             socket.send(paquete);
 
-            // System.out.println("📤 [Puerto " + puertoLocal + "] Enviado: " + mensaje);
         } catch (Exception e) {
             if (!finalizar) {
                 System.err.println("❌ Error al enviar mensaje: " + e.getMessage());
@@ -117,25 +110,18 @@ public class HiloClienteDino extends Thread {
         System.out.println("🔴 Cliente desconectado");
     }
 
-    /**
-     * Procesa los mensajes recibidos del servidor
-     */
+    /*** Procesa los mensajes recibidos del servidor*/
     private void procesarMensaje(DatagramPacket paquete) {
         String mensaje = new String(paquete.getData(), 0, paquete.getLength(), StandardCharsets.UTF_8).trim();
 
-        // System.out.println("📨 Servidor: " + mensaje);
-
         // Mensaje de confirmación de conexión
         if (mensaje.equals("OK")) {
-            // ✅ Actualizar IP del servidor (ya no es broadcast)
             ipServidor = paquete.getAddress();
 
-            // ✅ Desactivar broadcast después de conectar
             try {
                 socket.setBroadcast(false);
             } catch (java.net.SocketException e) {
                 System.err.println("⚠️ Error al desactivar broadcast: " + e.getMessage());
-                // No es crítico, continuar
             }
 
             ClienteEstado.conectado = true;
@@ -169,9 +155,6 @@ public class HiloClienteDino extends Thread {
         }
     }
 
-    /**
-     * Parsea un snapshot recibido del servidor y actualiza el estado del cliente
-     */
     private boolean parsearSnapshot(String mensaje) {
         try {
             String[] partes = mensaje.split(";");
@@ -231,9 +214,7 @@ public class HiloClienteDino extends Thread {
         }
     }
 
-    /**
-     * Notifica al listener de forma segura (en el hilo de LibGDX)
-     */
+    /*** Notifica al listener de forma segura (en el hilo de LibGDX)*/
     private void notificarConectadoSeguro() {
         Gdx.app.postRunnable(() -> {
             ClienteListener l = listener;
@@ -270,11 +251,8 @@ public class HiloClienteDino extends Thread {
         });
     }
 
-    // ==================== MÉTODOS PÚBLICOS PARA ENVIAR MENSAJES ====================
 
-    /**
-     * Envía mensaje indicando que el jugador está listo
-     */
+    /*** Envía mensaje indicando que el jugador está listo*/
     public void enviarListo() {
         enviarMensaje("Listo");
         System.out.println("📤 Enviando señal de listo desde puerto " + puertoLocal);
@@ -290,16 +268,12 @@ public class HiloClienteDino extends Thread {
         enviarMensaje(mensaje);
     }
 
-    /**
-     * Envía solicitud de reinicio del juego
-     */
+    /*** Envía solicitud de reinicio del juego*/
     public void enviarReset() {
         enviarMensaje("RESET");
     }
 
-    /**
-     * Configura la IP del servidor manualmente
-     */
+    /*** Configura la IP del servidor manualmente*/
     public void setIpServidor(String ip) {
         try {
             this.ipServidor = InetAddress.getByName(ip);
@@ -319,9 +293,7 @@ public class HiloClienteDino extends Thread {
         }
     }
 
-    /**
-     * Cierra el cliente y libera recursos
-     */
+    /*** Cierra el cliente y libera recursos*/
     public void cerrar() {
         System.out.println("🛑 Cerrando cliente desde puerto " + puertoLocal + "...");
 

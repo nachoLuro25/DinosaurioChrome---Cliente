@@ -4,9 +4,7 @@ import com.badlogic.gdx.math.MathUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Clase principal que maneja la lógica del juego
- */
+/*** CLASE PRINCIPAL QUE MANEJA LA LÓGICA DEL JUEGO*/
 public class DinosaurioGame {
     // Elementos del juego
     private Dinosaurio dinosaurio;
@@ -27,7 +25,7 @@ public class DinosaurioGame {
     private boolean gameOver;
     private boolean modoNoche;
 
-    // Control de día/noche (20 segundos cada ciclo)
+    // Control de día/noche 20 segundos cada ciclo (modo local)
     private float tiempoCiclo;
     private static final float DURACION_CICLO = 20f;
 
@@ -48,9 +46,7 @@ public class DinosaurioGame {
         this.tiempoCiclo = 0f;
     }
 
-    /**
-     * Actualiza el estado del juego
-     */
+    /*** Actualiza el estado del juego*/
     public void update(float deltaTime, boolean saltando, boolean agachando) {
         if (gameOver) {
             return;
@@ -98,7 +94,7 @@ public class DinosaurioGame {
             tiempoSpawnActual = 0;
         }
 
-        // Modo noche: se activa después de 20 segundos, luego alterna cada 20 segundos
+        // Modo noche: se activa después de 20 segundos, luego alterna cada 20 segundos (modo local)
         tiempoCiclo += deltaTime;
         if (tiempoCiclo >= DURACION_CICLO) {
             tiempoCiclo -= DURACION_CICLO;
@@ -106,9 +102,7 @@ public class DinosaurioGame {
         }
     }
 
-    /**
-     * Genera un nuevo obstáculo aleatorio
-     */
+    /*** Genera un nuevo obstáculo aleatorio*/
     private void spawnObstaculo() {
         float tipoRandom = MathUtils.random(1f);
         if (tipoRandom < 0.7f) {
@@ -121,9 +115,7 @@ public class DinosaurioGame {
         }
     }
 
-    /**
-     * Reinicia el juego a su estado inicial
-     */
+    /*** Reinicia el juego a su estado inicial*/
     public void reset() {
         dinosaurio.reset();
         obstaculos.clear();

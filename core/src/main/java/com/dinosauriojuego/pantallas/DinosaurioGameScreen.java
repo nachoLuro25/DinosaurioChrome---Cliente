@@ -19,9 +19,7 @@ import com.dinosauriojuego.logica.DinosaurioGame;
 import com.dinosauriojuego.logica.Dinosaurio;
 import com.dinosauriojuego.logica.Obstaculo;
 
-/**
- * Pantalla principal del juego con modo 2 jugadores
- */
+/*** Pantalla principal del juego con modo 2 jugadores*/
 public class DinosaurioGameScreen implements Screen {
     private static final float GAME_WIDTH = 1200;
     private static final float GAME_HEIGHT = 360;

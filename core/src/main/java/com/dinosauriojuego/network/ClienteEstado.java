@@ -2,9 +2,7 @@ package com.dinosauriojuego.network;
 
 import java.util.ArrayList;
 
-/**
- * Estado del cliente - Almacena toda la información sincronizada del servidor
- */
+/*** Estado del cliente - Almacena toda la información sincronizada del servidor*/
 public class ClienteEstado {
 
     public static boolean conectado = false;
@@ -24,9 +22,7 @@ public class ClienteEstado {
     // Highscore
     public static int highscore = 0;
 
-    /**
-     * Estado de un dinosaurio
-     */
+    /*** Estado de un dinosaurio*/
     public static class EstadoDinosaurio {
         public float y;
         public boolean enSuelo;
@@ -35,15 +31,13 @@ public class ClienteEstado {
         public int spriteActual; // Para animación
     }
 
-    /**
-     * Estado de un obstáculo
-     */
+    /*** Estado de un obstáculo*/
     public static class EstadoObstaculo {
-        public int tipo; // 0 = cactus, 1 = pájaro
-        public int variante; // Diferentes tipos de cactus
+        public int tipo;
+        public int variante;
         public float x;
         public float y;
-        public int spriteActual; // Para animación de pájaros
+        public int spriteActual;
     }
 
     // Estados de los dos jugadores
@@ -53,9 +47,7 @@ public class ClienteEstado {
     // Lista de obstáculos sincronizada
     public static final ArrayList<EstadoObstaculo> obstaculos = new ArrayList<>();
 
-    /**
-     * Reinicia el estado del cliente
-     */
+    /*** Reinicia el estado del cliente*/
     public static void reset() {
         tick = 0;
         puntuacion = 0;

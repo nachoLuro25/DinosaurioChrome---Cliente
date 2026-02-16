@@ -14,7 +14,7 @@ import com.dinosauriojuego.network.ClienteListener;
 import com.dinosauriojuego.network.HiloClienteDino;
 
 /**
- * Pantalla de espera - Se muestra cuando un jugador está listo y espera al otro
+ * Pantalla de espera para el primer jugador que se une
  */
 public class PantallaEspera implements Screen, ClienteListener {
 
@@ -109,7 +109,6 @@ public class PantallaEspera implements Screen, ClienteListener {
                 mensajeLabel.setText("Esperando al otro jugador.");
             }
 
-            // Recentrar
             mensajeLabel.pack();
             mensajeLabel.setPosition(
                     (1200 - mensajeLabel.getWidth() * 4.0f) / 2,
@@ -144,7 +143,6 @@ public class PantallaEspera implements Screen, ClienteListener {
 
     @Override
     public void onSnapshotRecibido() {
-        // No hacemos nada aquí en la pantalla de espera
     }
 
     @Override

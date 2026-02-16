@@ -8,9 +8,7 @@ import com.dinosauriojuego.pantallas.DinosaurioGameScreen;
 import com.dinosauriojuego.pantallas.MenuScreen;
 import com.dinosauriojuego.pantallas.PantallaEspera;
 
-/**
- * Clase principal de la aplicación con soporte para modo local y multijugador
- */
+/*** Clase principal de la aplicación con soporte para modo local y multijugador*/
 public class DinosaurioChromePrincipal extends Game {
     private Skin skin;
     private MenuScreen menuScreen;
@@ -25,7 +23,7 @@ public class DinosaurioChromePrincipal extends Game {
     }
 
     /**
-     * Inicia el juego en modo local (2 jugadores en la misma pantalla)
+     * Inicia el juego en modo local
      */
     public void iniciarJuego() {
         if (gameScreen != null) {
@@ -36,7 +34,7 @@ public class DinosaurioChromePrincipal extends Game {
     }
 
     /**
-     * Inicia el modo multijugador online
+     * Inicia el modo multijugador
      */
     public void iniciarMultijugador() {
         // Cerrar cliente anterior si existe
@@ -52,9 +50,7 @@ public class DinosaurioChromePrincipal extends Game {
         setScreen(new PantallaEspera(this, skin, clienteRed));
     }
 
-    /**
-     * Vuelve al menú principal
-     */
+    /*** Vuelve al menú principal*/
     public void volverAlMenu() {
         // Cerrar conexión de red si existe
         if (clienteRed != null) {

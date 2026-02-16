@@ -2,10 +2,8 @@ package com.dinosauriojuego.logica;
 
 import com.badlogic.gdx.math.Rectangle;
 
-/**
- * Clase que representa al dinosaurio jugador
- * Dimensiones reales del PNG: 81x93
- */
+/** CLASE QUE REPRESENTA AL DINOSAURIO EN EL JUEGO */
+
 public class Dinosaurio {
     // Posición y dimensiones
     private float x;
@@ -27,15 +25,15 @@ public class Dinosaurio {
     private float alturaOriginal;
     private float alturaAgachado;
 
-    // Colisión - Hitbox ajustada
+    // Hitbox
     private Rectangle bounds;
     private static final float HITBOX_REDUCCION_X = 0.15f;
     private static final float HITBOX_REDUCCION_Y = 0.10f;
 
     // Animación de correr
     private float tiempoAnimacion;
-    private static final float TIEMPO_CAMBIO_SPRITE = 0.1f; // Cambiar sprite cada 0.1 segundos
-    private int spriteActual; // 0 = pata izquierda, 1 = pata derecha
+    private static final float TIEMPO_CAMBIO_SPRITE = 0.1f;
+    private int spriteActual;
 
     public Dinosaurio(float ancho, float alto) {
         this.ancho = ancho;
@@ -69,14 +67,14 @@ public class Dinosaurio {
         velocidadY += GRAVEDAD * deltaTime;
         y += velocidadY * deltaTime;
 
-        // Limitar a altura del suelo
+        // Altura del suelo con el dino
         if (y <= alturaSuelo) {
             y = alturaSuelo;
             velocidadY = 0;
             saltando = false;
         }
 
-        // Actualizar animación de correr (cuando está en el suelo, tanto corriendo como agachado)
+        // Actualizar animación de correr estando parado o agachado
         if (!saltando) {
             tiempoAnimacion += deltaTime;
             if (tiempoAnimacion >= TIEMPO_CAMBIO_SPRITE) {

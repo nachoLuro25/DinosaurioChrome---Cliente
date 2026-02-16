@@ -13,9 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.dinosauriojuego.DinosaurioChromePrincipal;
 
-/**
- * Pantalla de menú principal con opción de juego local y multijugador
- */
+/*** Pantalla de menú principal con opción de juego local y multijugador*/
 public class MenuScreen implements Screen {
     private DinosaurioChromePrincipal game;
     private Stage stage;
@@ -30,7 +28,6 @@ public class MenuScreen implements Screen {
     }
 
     private void crearMenu() {
-        // Título del juego
         Label titulo = new Label("DINOSAURIO CHROME", skin, "default");
         titulo.setFontScale(6.0f);
         titulo.setColor(Color.BLACK);

@@ -17,17 +17,17 @@ public class Obstaculo {
     private float alto;
     private int tipo;
 
-    // Colisión - Hitbox ajustada
+    // Hitbox
     private Rectangle bounds;
 
-    // Reducción de hitbox para hacerla un poco más chica
+    // Reducción de hitbox
     private static final float HITBOX_REDUCCION_X = 0.15f;
     private static final float HITBOX_REDUCCION_Y = 0.10f;
 
     // Animación de pájaros
     private float tiempoAnimacion;
-    private static final float TIEMPO_CAMBIO_SPRITE = 0.15f; // Cambiar alas cada 0.15 segundos
-    private int spriteActual; // 0 = alas arriba, 1 = alas abajo
+    private static final float TIEMPO_CAMBIO_SPRITE = 0.15f;
+    private int spriteActual;
 
     public Obstaculo(float x, float alto, float ancho, int tipo) {
         this.x = x;
@@ -51,9 +51,7 @@ public class Obstaculo {
         actualizarHitbox();
     }
 
-    /**
-     * Actualiza la hitbox un poco más chica que el sprite
-     */
+    /*** Actualiza la hitbox un poco más chica que el sprite*/
     private void actualizarHitbox() {
         float reduccionX = ancho * HITBOX_REDUCCION_X;
         float reduccionY = alto * HITBOX_REDUCCION_Y;
@@ -64,9 +62,7 @@ public class Obstaculo {
         bounds.height = alto - (reduccionY * 2);
     }
 
-    /**
-     * Actualiza la posición del obstáculo
-     */
+    /*** Actualiza la posición del obstáculo*/
     public void update(float deltaTime, float velocidad) {
         x -= velocidad * deltaTime;
 

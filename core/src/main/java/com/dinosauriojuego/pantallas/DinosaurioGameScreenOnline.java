@@ -22,9 +22,7 @@ import com.dinosauriojuego.network.HiloClienteDino;
 
 import java.util.ArrayList;
 
-/**
- * Pantalla de juego online - Renderiza el estado recibido del servidor
- */
+/*** Pantalla de juego online - Renderiza el estado recibido del servidor*/
 public class DinosaurioGameScreenOnline implements Screen, ClienteListener {
     private static final float GAME_WIDTH = 1200;
     private static final float GAME_HEIGHT = 360;
@@ -201,7 +199,6 @@ public class DinosaurioGameScreenOnline implements Screen, ClienteListener {
         boolean agacharPresionado = Gdx.input.isKeyPressed(Input.Keys.DOWN) ||
                 Gdx.input.isKeyPressed(Input.Keys.S);
 
-        // Enviar inputs al servidor solo si el juego no ha terminado
         if (!ClienteEstado.juegoTerminado) {
             clienteRed.enviarInput(saltoPresionado, agacharPresionado);
 
@@ -445,13 +442,11 @@ public class DinosaurioGameScreenOnline implements Screen, ClienteListener {
 
     @Override
     public void onSnapshotRecibido() {
-        // El estado se actualiza automáticamente en ClienteEstado
     }
 
     @Override
     public void onDesconectado() {
         System.out.println("🔌 Desconectado del servidor");
-        // Aquí podrías volver al menú
     }
 
     @Override

@@ -11,3 +11,4 @@ public class Lwjgl3Launcher {
         new Lwjgl3Application(new Main(), config);
     }
 }
+

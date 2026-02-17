@@ -162,14 +162,17 @@ public class PantallaJuegoOnline extends ScreenAdapter {
         }
 
         // dinos
+
+        final float DINO_W = 44f;
+        final float DINO_H = 60f;
+        final float DINO_Y_OFFSET = 20f;
         Texture d1 = elegirDinoTex(ClienteEstado.p1.vivo, ClienteEstado.p1.enPiso,
                 ClienteEstado.p1.agachado, ClienteEstado.tick);
-        final float DINO_Y_OFFSET = 10f;
-        batch.draw(d1, Constantes.X_JUGADOR_1, ClienteEstado.p1.y + DINO_Y_OFFSET);
+        batch.draw(d1, Constantes.X_JUGADOR_1, ClienteEstado.p1.y + DINO_Y_OFFSET, DINO_W, DINO_H);
 
         Texture d2 = elegirDinoTex(ClienteEstado.p2.vivo, ClienteEstado.p2.enPiso,
                 ClienteEstado.p2.agachado, ClienteEstado.tick);
-        batch.draw(d2, Constantes.X_JUGADOR_2, ClienteEstado.p2.y + DINO_Y_OFFSET);
+        batch.draw(d2, Constantes.X_JUGADOR_2, ClienteEstado.p2.y + DINO_Y_OFFSET, DINO_W, DINO_H);
 
         // HUD: HI score + score actuales arriba a la derecha, estilo Chrome
         Color hudColor = esNoche ? new Color(0.85f, 0.85f, 0.85f, 1f) : COL_GRIS_OSC;

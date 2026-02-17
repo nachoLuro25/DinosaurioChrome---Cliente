@@ -1,169 +1,62 @@
 package com.dinosauriojuego.pantallas;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.dinosauriojuego.DinosaurioChromePrincipal;
-import com.dinosauriojuego.network.ClienteEstado;
-import com.dinosauriojuego.network.ClienteListener;
-import com.dinosauriojuego.network.HiloClienteDino;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-/**
- * Pantalla de espera - Se muestra cuando un jugador está listo y espera al otro
- */
-public class PantallaEspera implements Screen, ClienteListener {
+import com.dinosauriojuego.core.Main;
+import com.dinosauriojuego.net.ClienteEstado;
+import com.dinosauriojuego.net.ClienteListener;
+import com.dinosauriojuego.net.HiloClienteDino;
+import com.dinosauriojuego.utiles.Assets;
 
-    private DinosaurioChromePrincipal game;
-    private Skin skin;
-    private HiloClienteDino clienteRed;
+public class PantallaEspera extends ScreenAdapter implements ClienteListener {
 
-    private Stage stage;
-    private Label mensajeLabel;
-    private Label estadoLabel;
+    private final Main game;
+    private final Assets assets;
+    private final HiloClienteDino net;
 
-    private float tiempoAnimacion;
+    private SpriteBatch batch;
+    private BitmapFont font;
 
-    public PantallaEspera(DinosaurioChromePrincipal game, Skin skin, HiloClienteDino clienteRed) {
+    //se llama cuando un jugador esta listo y espera al otro, al recibir el evento de que el juego empieza, cambia a la pantalla de juego online
+    public PantallaEspera(Main game, Assets assets, HiloClienteDino net) {
         this.game = game;
-        this.skin = skin;
-        this.clienteRed = clienteRed;
-        this.stage = new Stage(new FitViewport(1200, 720));
-        this.tiempoAnimacion = 0;
-
-        setupUI();
-    }
-
-    private void setupUI() {
-        // Mensaje principal
-        mensajeLabel = new Label("Esperando al otro jugador", skin, "default");
-        mensajeLabel.setFontScale(4.0f);
-        mensajeLabel.setColor(Color.BLACK);
-        mensajeLabel.setPosition(
-                (1200 - mensajeLabel.getWidth() * 4.0f) / 2,
-                400
-        );
-        stage.addActor(mensajeLabel);
-
-        // Estado de conexión
-        estadoLabel = new Label("", skin, "default");
-        estadoLabel.setFontScale(2.0f);
-        estadoLabel.setColor(Color.DARK_GRAY);
-        estadoLabel.setPosition(
-                (1200 - estadoLabel.getWidth() * 2.0f) / 2,
-                300
-        );
-        stage.addActor(estadoLabel);
+        this.assets = assets;
+        this.net = net;
     }
 
     @Override
     public void show() {
-        Gdx.input.setInputProcessor(stage);
-
-        // Configurar listener y enviar mensaje de listo
-        clienteRed.setListener(this);
-        clienteRed.enviarListo();
-
-        actualizarEstado();
-    }
-
-    private void actualizarEstado() {
-        if (ClienteEstado.conectado) {
-            estadoLabel.setText("Conectado al servidor");
-        } else {
-            estadoLabel.setText("Conectando...");
-        }
-
-        // Reposicionar el label de estado
-        estadoLabel.pack();
-        estadoLabel.setPosition(
-                (1200 - estadoLabel.getWidth() * 2.0f) / 2,
-                300
-        );
+        batch = new SpriteBatch();
+        font = new BitmapFont();
+        font.getData().setScale(2f);
+        net.setListener(this);
+        net.sendListo();
     }
 
     @Override
     public void render(float delta) {
-        // Si el juego ya comenzó, cambiar a la pantalla de juego online
-        if (ClienteEstado.juegoIniciado) {
-            game.setScreen(new DinosaurioGameScreenOnline(skin, clienteRed));
+        if (ClienteEstado.empezo) {
+            game.setScreen(new PantallaJuegoOnline(game, assets, net));
             return;
         }
 
-        // Animación de puntos suspensivos
-        tiempoAnimacion += delta;
-        if (tiempoAnimacion >= 0.5f) {
-            tiempoAnimacion = 0;
-            String texto = mensajeLabel.getText().toString();
-            if (texto.endsWith("...")) {
-                mensajeLabel.setText("Esperando al otro jugador");
-            } else if (texto.endsWith("..")) {
-                mensajeLabel.setText("Esperando al otro jugador...");
-            } else if (texto.endsWith(".")) {
-                mensajeLabel.setText("Esperando al otro jugador..");
-            } else {
-                mensajeLabel.setText("Esperando al otro jugador.");
-            }
-
-            // Recentrar
-            mensajeLabel.pack();
-            mensajeLabel.setPosition(
-                    (1200 - mensajeLabel.getWidth() * 4.0f) / 2,
-                    400
-            );
-        }
-
-        // Renderizar
-        Gdx.gl.glClearColor(0.9f, 0.9f, 0.95f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        stage.act(delta);
-        stage.draw();
+        batch.begin();
+        font.draw(batch, "Esperando al otro jugador...", 380, 360);
+        batch.end();
     }
 
-    @Override
-    public void resize(int width, int height) {
-        stage.getViewport().update(width, height, true);
-    }
-
-    @Override
-    public void onConectado() {
-        System.out.println("✅ Evento: Conectado al servidor");
-        actualizarEstado();
-    }
-
-    @Override
-    public void onJuegoIniciado() {
-        System.out.println("🎮 Evento: Juego iniciado");
-        // El cambio de pantalla se hace en render()
-    }
-
-    @Override
-    public void onSnapshotRecibido() {
-        // No hacemos nada aquí en la pantalla de espera
-    }
-
-    @Override
-    public void onDesconectado() {
-        System.out.println("🔌 Evento: Desconectado del servidor");
-        game.volverAlMenu();
-    }
-
-    @Override
-    public void pause() {}
-
-    @Override
-    public void resume() {}
-
-    @Override
-    public void hide() {}
+    @Override public void onConectado() {}
+    @Override public void onEmpieza() {}
+    @Override public void onSnapshot() {}
 
     @Override
     public void dispose() {
-        stage.dispose();
+        if (batch != null) batch.dispose();
+        if (font != null) font.dispose();
     }
 }

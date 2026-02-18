@@ -129,11 +129,6 @@ public class PantallaMenu extends ScreenAdapter {
         // cactus decorativos del menu
         batch.setProjectionMatrix(cam.combined);
         batch.begin();
-        batch.setColor(0.78f, 0.78f, 0.78f, 1f);
-        for (float cx : cactusDecoX) {
-            batch.draw(assets.cactusChico1, cx, Constantes.Y_PISO_P1);
-        }
-        batch.setColor(COL_BLANCO);
 
         // dino animado caminando en el menu
         com.badlogic.gdx.graphics.Texture dinoTex =

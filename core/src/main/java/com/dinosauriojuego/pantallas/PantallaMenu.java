@@ -24,10 +24,10 @@ public class PantallaMenu extends ScreenAdapter {
     private final Assets assets;
 
     private OrthographicCamera cam;
-    private Viewport    viewport;
-    private SpriteBatch batch;
+    private Viewport      viewport;
+    private SpriteBatch   batch;
     private ShapeRenderer shape;
-    private GlyphLayout layout;
+    private GlyphLayout   layout;
 
     private BitmapFont fontGrande;
     private BitmapFont fontMedia;
@@ -43,7 +43,7 @@ public class PantallaMenu extends ScreenAdapter {
     private float[] nubeSpd = new float[NUM_NUBES];
     private float[] nubeW   = new float[NUM_NUBES];
 
-    // cactus decorativos de fondo
+    // cactus decorativos de fondo (se dibujan en la pista superior del menu)
     private float[] cactusDecoX = { 140f, 480f, 760f, 1060f };
 
     // paleta Chrome
@@ -72,7 +72,8 @@ public class PantallaMenu extends ScreenAdapter {
         fontMedia  = new BitmapFont();
         fontChica  = new BitmapFont();
 
-        float[] alts  = { 430f, 470f, 510f, 400f, 445f, 485f };
+        // nubes en la parte superior de la pantalla (sobre la pista del menu)
+        float[] alts  = { 530f, 570f, 610f, 500f, 545f, 585f };
         float[] anchs = { 155f, 115f, 195f, 135f, 175f, 108f };
         float[] spds  = {  28f,  22f,  18f,  32f,  25f,  20f };
         java.util.Random rng = new java.util.Random(13);
@@ -89,7 +90,7 @@ public class PantallaMenu extends ScreenAdapter {
         tiempo       += delta;
         dinoAnimTick += delta * 60f;
 
-        // input: ENTER conecta y va a espera
+        // input: ENTER conecta y va a pantalla de espera
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
             HiloClienteDino net = new HiloClienteDino();
             net.start();
@@ -119,25 +120,25 @@ public class PantallaMenu extends ScreenAdapter {
         }
         shape.end();
 
-        // piso
+        // linea del piso del menu (usa Y_PISO_P1, la pista superior)
         shape.begin(ShapeRenderer.ShapeType.Filled);
         shape.setColor(COL_PISO);
-        shape.rect(0, Constantes.Y_PISO - 4, W, 4f);
+        shape.rect(0, Constantes.Y_PISO_P1 - 4, W, 4f);
         shape.end();
 
-        // cactus de fondo grises
+        // cactus decorativos del menu
         batch.setProjectionMatrix(cam.combined);
         batch.begin();
         batch.setColor(0.78f, 0.78f, 0.78f, 1f);
         for (float cx : cactusDecoX) {
-            batch.draw(assets.cactusChico1, cx, Constantes.Y_PISO);
+            batch.draw(assets.cactusChico1, cx, Constantes.Y_PISO_P1);
         }
         batch.setColor(COL_BLANCO);
 
-        // dino animado caminando
+        // dino animado caminando en el menu
         com.badlogic.gdx.graphics.Texture dinoTex =
                 ((int) dinoAnimTick % 12 < 6) ? assets.dinoMov1 : assets.dinoMov2;
-        batch.draw(dinoTex, 300f, Constantes.Y_PISO);
+        batch.draw(dinoTex, 300f, Constantes.Y_PISO_P1);
 
         // HI score decorativo
         fontMedia.setColor(COL_GRIS);
@@ -146,14 +147,14 @@ public class PantallaMenu extends ScreenAdapter {
         layout.setText(fontMedia, hiStr);
         fontMedia.draw(batch, hiStr, W - layout.width - 24, H - 24);
 
-        // título
+        // titulo
         fontGrande.setColor(COL_NEGRO);
         fontGrande.getData().setScale(3.5f);
         centrarTexto(fontGrande, "DINO CHROME", W, H - 88);
 
         batch.end();
 
-        // línea bajo el título
+        // linea bajo el titulo
         shape.begin(ShapeRenderer.ShapeType.Filled);
         shape.setColor(COL_PISO);
         shape.rect(W / 2f - 210, H - 148, 420, 2.5f);
@@ -161,23 +162,23 @@ public class PantallaMenu extends ScreenAdapter {
 
         batch.begin();
 
-        // subtítulo
+        // subtitulo
         fontChica.setColor(COL_GRIS);
         fontChica.getData().setScale(1.25f);
         centrarTexto(fontChica, "MULTIJUGADOR  —  CLIENTE", W, H - 170);
 
-        // instrucción central parpadeante
+        // instruccion central parpadeante
         float alpha = 0.5f + 0.5f * (float) Math.abs(Math.sin(tiempo * 3.0f));
         fontMedia.setColor(COL_NEGRO.r, COL_NEGRO.g, COL_NEGRO.b, alpha);
         fontMedia.getData().setScale(1.55f);
         centrarTexto(fontMedia, "Presiona  ENTER  para conectar", W, H / 2f + 20f);
 
-        // descripción debajo
+        // descripcion debajo
         fontChica.setColor(COL_GRIS_OSC);
         fontChica.getData().setScale(1.15f);
         centrarTexto(fontChica, "Se buscara un servidor en la red local", W, H / 2f - 22f);
 
-        // controles (esquina inferior)
+        // controles en la esquina inferior
         fontChica.setColor(COL_GRIS);
         fontChica.getData().setScale(1.05f);
         centrarTexto(fontChica, "Controles:  ARRIBA = saltar    ABAJO = agacharse    R = reiniciar", W, 40f);

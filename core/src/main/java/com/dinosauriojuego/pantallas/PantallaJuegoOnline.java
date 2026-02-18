@@ -25,8 +25,8 @@ import com.dinosauriojuego.utiles.Constantes;
 
 public class PantallaJuegoOnline extends ScreenAdapter {
 
-    private final Main           game;
-    private final Assets         assets;
+    private final Main            game;
+    private final Assets          assets;
     private final HiloClienteDino net;
 
     private OrthographicCamera cam;
@@ -39,11 +39,13 @@ public class PantallaJuegoOnline extends ScreenAdapter {
     private BitmapFont fontMedia;
     private BitmapFont fontChica;
 
-    private float fondoX         = 0f;
-    private float velocidadFondo = 140f;
-    private static final int SCORE_CAMBIO = 500;
+    // cada pista tiene su propio offset de scroll del fondo
+    private float fondoXP1 = 0f;
+    private float fondoXP2 = 0f;
+    private static final float VEL_FONDO = 140f;
+    private static final int   SCORE_CAMBIO = 500;
 
-    private boolean resetEnviado     = false;
+    private boolean resetEnviado      = false;
     private boolean highscoreGuardado = false;
     private float   tiempo            = 0f;
 
@@ -70,17 +72,15 @@ public class PantallaJuegoOnline extends ScreenAdapter {
         batch    = new SpriteBatch();
         shape    = new ShapeRenderer();
         layout   = new GlyphLayout();
-
         fontGrande = new BitmapFont();
         fontMedia  = new BitmapFont();
         fontChica  = new BitmapFont();
 
         prefs = Gdx.app.getPreferences("dinochrome_client");
         ClienteEstado.highscore = prefs.getInteger("highscore", 0);
-
         highscoreGuardado = false;
         resetEnviado      = false;
-        fondoX            = 0f;
+        fondoXP1 = fondoXP2 = 0f;
 
         assets.startMusic();
     }
@@ -97,14 +97,11 @@ public class PantallaJuegoOnline extends ScreenAdapter {
             net.sendInput(jump, crouch);
             if (jump) assets.playJump();
         } else {
-            if (reset && !resetEnviado) {
-                net.sendReset();
-                resetEnviado = true;
-            }
+            if (reset && !resetEnviado) { net.sendReset(); resetEnviado = true; }
         }
         if (!ClienteEstado.terminado) resetEnviado = false;
 
-        // guardar highscore
+        // guardar highscore al terminar
         if (ClienteEstado.terminado) {
             if (!highscoreGuardado) {
                 if (ClienteEstado.score > ClienteEstado.highscore) {
@@ -117,35 +114,103 @@ public class PantallaJuegoOnline extends ScreenAdapter {
             highscoreGuardado = false;
         }
 
-        ArrayList<ClienteEstado.ObstacleState> obsCopia;
-        synchronized (ClienteEstado.obstacles) {
-            obsCopia = new ArrayList<>(ClienteEstado.obstacles);
-        }
+        // copias locales de los obstaculos para no bloquear el hilo de red
+        ArrayList<ClienteEstado.ObstacleState> obsP1, obsP2;
+        synchronized (ClienteEstado.obstaculosP1) { obsP1 = new ArrayList<>(ClienteEstado.obstaculosP1); }
+        synchronized (ClienteEstado.obstaculosP2) { obsP2 = new ArrayList<>(ClienteEstado.obstaculosP2); }
 
-        viewport.apply();
-        cam.update();
-        batch.setProjectionMatrix(cam.combined);
+        // avanzar el scroll de cada fondo
+        boolean freeze = ClienteEstado.terminado || !ClienteEstado.empezo;
+        if (!freeze) {
+            fondoXP1 -= VEL_FONDO * delta;
+            fondoXP2 -= VEL_FONDO * delta;
+        }
+        float W = Constantes.ANCHO_VIRTUAL;
+        float H = Constantes.ALTO_VIRTUAL;
+        if (fondoXP1 <= -W) fondoXP1 = 0f;
+        if (fondoXP2 <= -W) fondoXP2 = 0f;
 
         boolean esNoche = (ClienteEstado.score / SCORE_CAMBIO) % 2 == 1;
         Texture fondo   = esNoche ? assets.fondoNoche : assets.fondoDia;
 
-        boolean freezeBg = ClienteEstado.terminado || !ClienteEstado.empezo;
-        if (!freezeBg) fondoX -= velocidadFondo * delta;
-
-        float w = Constantes.ANCHO_VIRTUAL;
-
+        // ---- FONDO GENERAL ----
         Gdx.gl.glClearColor(COL_BG.r, COL_BG.g, COL_BG.b, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        viewport.apply();
+        cam.update();
+
+        // convertir coordenadas virtuales a pixels reales para glScissor
+        // (el viewport puede estar escalado si la ventana no es exactamente 1280x720)
+        float scaleX = (float) Gdx.graphics.getWidth()  / W;
+        float scaleY = (float) Gdx.graphics.getHeight() / H;
+
+        // altura en pixels reales de cada zona
+        int pista1Y = Math.round(Constantes.Y_DIVISOR * scaleY); // pista P1 empieza aqui
+        int pista1H = Math.round((H - Constantes.Y_DIVISOR) * scaleY);
+        int pista2Y = 0;
+        int pista2H = Math.round(Constantes.Y_DIVISOR * scaleY);
+
+        // ---- DIBUJAR FONDO PISTA P1 (zona superior) con scissor ----
+        Gdx.gl.glEnable(GL20.GL_SCISSOR_TEST);
+        Gdx.gl.glScissor(0, pista1Y, Gdx.graphics.getWidth(), pista1H);
+
+        batch.setProjectionMatrix(cam.combined);
         batch.begin();
+        // el fondo se dibuja completo (1280x720) pero el scissor solo deja ver la zona superior
+        float offsetP1 = Constantes.Y_PISO_P1 - 210f;
+        batch.draw(fondo, fondoXP1,     offsetP1, W, H);
+        batch.draw(fondo, fondoXP1 + W, offsetP1, W, H);
+        batch.end();
 
-        // fondo del juego
-        batch.draw(fondo, fondoX, 0, w, Constantes.ALTO_VIRTUAL);
-        batch.draw(fondo, fondoX + w, 0, w, Constantes.ALTO_VIRTUAL);
-        if (fondoX <= -w) fondoX = 0f;
+        // ---- DIBUJAR FONDO PISTA P2 (zona inferior) con scissor ----
+        Gdx.gl.glScissor(0, pista2Y, Gdx.graphics.getWidth(), pista2H);
 
-        // obstáculos
-        for (ClienteEstado.ObstacleState o : obsCopia) {
+        batch.begin();
+        float offsetP2 = Constantes.Y_PISO_P2 - 210f;
+        batch.draw(fondo, fondoXP2,     offsetP2, W, H);
+        batch.draw(fondo, fondoXP2 + W, offsetP2, W, H);
+        batch.end();
+
+        // apagar scissor para dibujar el resto sin restriccion
+        Gdx.gl.glDisable(GL20.GL_SCISSOR_TEST);
+
+        // ---- DIBUJAR PISTAS (dinos, obstaculos, etiquetas) ----
+        batch.begin();
+        dibujarPista(obsP1, ClienteEstado.p1, Constantes.X_JUGADOR_1, Constantes.Y_PISO_P1, "P1");
+        dibujarPista(obsP2, ClienteEstado.p2, Constantes.X_JUGADOR_2, Constantes.Y_PISO_P2, "P2");
+
+        // HUD
+        Color hudColor = esNoche ? new Color(0.85f, 0.85f, 0.85f, 1f) : COL_GRIS_OSC;
+        fontMedia.setColor(COL_GRIS);
+        fontMedia.getData().setScale(1.45f);
+        String hiStr = "HI  " + String.format("%05d", ClienteEstado.highscore);
+        layout.setText(fontMedia, hiStr);
+        float hiX = W - layout.width - 24;
+        fontMedia.draw(batch, hiStr, hiX, H - 24);
+
+        fontMedia.setColor(hudColor);
+        fontMedia.getData().setScale(1.45f);
+        String scoreStr = String.format("%05d", ClienteEstado.score);
+        layout.setText(fontMedia, scoreStr);
+        fontMedia.draw(batch, scoreStr, hiX - layout.width - 28, H - 24);
+
+        batch.end();
+
+        // pisos y divisor encima de todo
+        dibujarPisosYDivisor();
+
+        if (ClienteEstado.terminado) dibujarGameOver();
+    }
+
+    // dibuja los elementos de una pista: obstaculos, dino y etiqueta
+    private void dibujarPista(ArrayList<ClienteEstado.ObstacleState> obs,
+                              ClienteEstado.DinoState dino,
+                              float xJugador, float yPiso, String etiqueta) {
+        final float DINO_W     = 74.8f;
+        final float DINO_Y_OFF = 40f;
+
+        for (ClienteEstado.ObstacleState o : obs) {
             if (o.type == 0) {
                 Texture t;
                 if      (o.variant == 0) t = assets.cactusChico1;
@@ -153,57 +218,33 @@ public class PantallaJuegoOnline extends ScreenAdapter {
                 else if (o.variant == 2) t = assets.cactusGrande1;
                 else if (o.variant == 3) t = assets.cactusGrande2;
                 else                     t = assets.cactusCombinado;
-                float y = (o.y != 0f) ? o.y : Constantes.Y_PISO;
-                batch.draw(t, o.x, y);
+                batch.draw(t, o.x, yPiso);
             } else {
                 Texture t = (ClienteEstado.tick % 12 < 6) ? assets.ptero1 : assets.ptero2;
                 batch.draw(t, o.x, o.y);
             }
         }
 
-        // dinos
+        float dinoH = dino.agachado ? 51f : 102f;
+        Texture dinoTex = elegirDinoTex(dino.vivo, dino.enPiso, dino.agachado, ClienteEstado.tick);
+        batch.draw(dinoTex, xJugador, dino.y + DINO_Y_OFF, DINO_W, dinoH);
 
-        final float DINO_W = 74.8f;
-        final float DINO_Y_OFFSET = 40f;
-
-        Texture d1 = elegirDinoTex(ClienteEstado.p1.vivo, ClienteEstado.p1.enPiso, ClienteEstado.p1.agachado, ClienteEstado.tick);
-        float dino1H = ClienteEstado.p1.agachado ? 51f : 102f;
-        batch.draw(d1, Constantes.X_JUGADOR_1, ClienteEstado.p1.y + DINO_Y_OFFSET, DINO_W, dino1H);
-
-        Texture d2 = elegirDinoTex(ClienteEstado.p2.vivo, ClienteEstado.p2.enPiso, ClienteEstado.p2.agachado, ClienteEstado.tick);
-        float dino2H = ClienteEstado.p2.agachado ? 51f : 102f;
-        batch.draw(d2, Constantes.X_JUGADOR_2, ClienteEstado.p2.y + DINO_Y_OFFSET, DINO_W, dino2H);
-
-        // HUD: HI score + score actuales arriba a la derecha, estilo Chrome
-        Color hudColor = esNoche ? new Color(0.85f, 0.85f, 0.85f, 1f) : COL_GRIS_OSC;
-
-        fontMedia.setColor(COL_GRIS);
-        fontMedia.getData().setScale(1.45f);
-        String hiStr = "HI  " + String.format("%05d", ClienteEstado.highscore);
-        layout.setText(fontMedia, hiStr);
-        float hiX = Constantes.ANCHO_VIRTUAL - layout.width - 24;
-        fontMedia.draw(batch, hiStr, hiX, Constantes.ALTO_VIRTUAL - 24);
-
-        fontMedia.setColor(hudColor);
-        fontMedia.getData().setScale(1.45f);
-        String scoreStr = String.format("%05d", ClienteEstado.score);
-        layout.setText(fontMedia, scoreStr);
-        fontMedia.draw(batch, scoreStr,
-                hiX - layout.width - 28,
-                Constantes.ALTO_VIRTUAL - 24);
-
-        // etiquetas P1 / P2
         fontChica.setColor(COL_GRIS_OSC);
         fontChica.getData().setScale(1.1f);
-        fontChica.draw(batch, "P1", Constantes.X_JUGADOR_1 + 8, ClienteEstado.p1.y + 74 + 10f);
-        fontChica.draw(batch, "P2", Constantes.X_JUGADOR_2 + 8, ClienteEstado.p2.y + 74 + 10f);
+        fontChica.draw(batch, etiqueta, xJugador + 8, dino.y + DINO_Y_OFF + dinoH + 6);
+    }
 
-        batch.end();
-
-        // Game Over overlay
-        if (ClienteEstado.terminado) {
-            dibujarGameOver();
-        }
+    // dibuja los pisos de cada pista y la linea divisoria
+    private void dibujarPisosYDivisor() {
+        float W = Constantes.ANCHO_VIRTUAL;
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shape.setProjectionMatrix(cam.combined);
+        shape.begin(ShapeRenderer.ShapeType.Filled);
+        shape.setColor(COL_PISO);
+        shape.rect(0, Constantes.Y_PISO_P1 - 4, W, 4f); // piso pista P1
+        shape.rect(0, Constantes.Y_PISO_P2 - 4, W, 4f); // piso pista P2
+        shape.end();
     }
 
     private void dibujarGameOver() {
@@ -212,16 +253,13 @@ public class PantallaJuegoOnline extends ScreenAdapter {
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-
         shape.setProjectionMatrix(cam.combined);
 
-        // overlay semitransparente
         shape.begin(ShapeRenderer.ShapeType.Filled);
         shape.setColor(0.95f, 0.95f, 0.95f, 0.82f);
         shape.rect(0, 0, W, H);
         shape.end();
 
-        // caja central
         float bw = 560f, bh = 240f;
         float bx = (W - bw) / 2f, by = (H - bh) / 2f;
 
@@ -237,7 +275,6 @@ public class PantallaJuegoOnline extends ScreenAdapter {
         shape.end();
         Gdx.gl.glLineWidth(1f);
 
-        // franja superior negra
         shape.begin(ShapeRenderer.ShapeType.Filled);
         shape.setColor(COL_NEGRO);
         shape.rect(bx, by + bh - 7f, bw, 7f);
@@ -246,17 +283,14 @@ public class PantallaJuegoOnline extends ScreenAdapter {
         batch.setProjectionMatrix(cam.combined);
         batch.begin();
 
-        // GAME OVER
         fontGrande.setColor(COL_NEGRO);
         fontGrande.getData().setScale(2.7f);
         centrarTexto(fontGrande, "GAME OVER", W, by + bh - 16);
 
-        // resultado
         fontMedia.setColor(COL_GRIS_OSC);
         fontMedia.getData().setScale(1.6f);
         centrarTexto(fontMedia, ClienteEstado.mensajeFin.toUpperCase(), W, by + bh / 2f + 28);
 
-        // score y highscore
         fontChica.setColor(COL_GRIS);
         fontChica.getData().setScale(1.2f);
         centrarTexto(fontChica,
@@ -264,22 +298,20 @@ public class PantallaJuegoOnline extends ScreenAdapter {
                         "      HI  " + String.format("%05d", ClienteEstado.highscore),
                 W, by + bh / 2f - 14f);
 
-        // línea divisoria
         batch.end();
+
         shape.begin(ShapeRenderer.ShapeType.Filled);
         shape.setColor(COL_PISO);
         shape.rect(bx + 30, by + bh / 2f - 34f, bw - 60, 2f);
         shape.end();
-        batch.begin();
 
-        // instruccion reinicio parpadeante + contador
+        batch.begin();
         float alpha = 0.45f + 0.55f * (float) Math.abs(Math.sin(tiempo * 3.5f));
         fontChica.setColor(COL_NEGRO.r, COL_NEGRO.g, COL_NEGRO.b, alpha);
         fontChica.getData().setScale(1.2f);
         centrarTexto(fontChica,
                 "Presiona  R  para reiniciar  (" + ClienteEstado.resetReadyCount + "/2)",
                 W, by + 58f);
-
         batch.end();
     }
 
@@ -295,10 +327,7 @@ public class PantallaJuegoOnline extends ScreenAdapter {
         font.draw(batch, texto, (areaW - layout.width) / 2f, y);
     }
 
-    @Override
-    public void resize(int width, int height) {
-        if (viewport != null) viewport.update(width, height, true);
-    }
+    @Override public void resize(int w, int h) { if (viewport != null) viewport.update(w, h, true); }
 
     @Override
     public void dispose() {

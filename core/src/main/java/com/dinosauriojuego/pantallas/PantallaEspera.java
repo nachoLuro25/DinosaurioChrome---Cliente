@@ -21,15 +21,15 @@ import com.dinosauriojuego.utiles.Constantes;
 
 public class PantallaEspera extends ScreenAdapter implements ClienteListener {
 
-    private final Main           game;
-    private final Assets         assets;
+    private final Main            game;
+    private final Assets          assets;
     private final HiloClienteDino net;
 
     private OrthographicCamera cam;
-    private Viewport    viewport;
-    private SpriteBatch batch;
+    private Viewport      viewport;
+    private SpriteBatch   batch;
     private ShapeRenderer shape;
-    private GlyphLayout layout;
+    private GlyphLayout   layout;
 
     private BitmapFont fontGrande;
     private BitmapFont fontMedia;
@@ -38,15 +38,15 @@ public class PantallaEspera extends ScreenAdapter implements ClienteListener {
     private float tiempo       = 0f;
     private float dinoAnimTick = 0f;
 
-    // física local para la animación del dino (no disponible en Constantes del cliente)
-    private static final float GRAVEDAD_LOBBY      = -1700f;
+    // fisica local para la animacion del dino del lobby
+    private static final float GRAVEDAD_LOBBY       = -1700f;
     private static final float VELOCIDAD_SALTO_LOBBY = 700f;
 
-    // El dino "salta" en loop mientras espera
-    private float dinoY   = Constantes.Y_PISO;
-    private float dinoVY  = 0f;
-    private boolean saltando = false;
-    private float timerSalto = 0f;
+    // el dino salta en loop mientras espera — usa Y_PISO_P1 (pista superior del lobby)
+    private float   dinoY     = Constantes.Y_PISO_P1;
+    private float   dinoVY    = 0f;
+    private boolean saltando  = false;
+    private float   timerSalto = 0f;
 
     // nubes
     private static final int NUM_NUBES = 6;
@@ -82,7 +82,8 @@ public class PantallaEspera extends ScreenAdapter implements ClienteListener {
         fontMedia  = new BitmapFont();
         fontChica  = new BitmapFont();
 
-        float[] alts  = { 430f, 470f, 510f, 400f, 445f, 485f };
+        // nubes en la parte superior de la pantalla (zona del lobby)
+        float[] alts  = { 530f, 570f, 610f, 500f, 545f, 585f };
         float[] anchs = { 155f, 115f, 195f, 135f, 175f, 108f };
         float[] spds  = {  28f,  22f,  18f,  32f,  25f,  20f };
         java.util.Random rng = new java.util.Random(99);
@@ -102,7 +103,7 @@ public class PantallaEspera extends ScreenAdapter implements ClienteListener {
         tiempo       += delta;
         dinoAnimTick += delta * 60f;
 
-        // si ya empezó, cambiar pantalla
+        // si ya empezo la partida, cambiar a la pantalla de juego
         if (ClienteEstado.empezo) {
             game.setScreen(new PantallaJuegoOnline(game, assets, net));
             return;
@@ -111,18 +112,18 @@ public class PantallaEspera extends ScreenAdapter implements ClienteListener {
         float W = Constantes.ANCHO_VIRTUAL;
         float H = Constantes.ALTO_VIRTUAL;
 
-        // física del dino saltando en loop
+        // fisica del dino saltando en loop (usa el piso de la pista superior)
         timerSalto += delta;
         if (!saltando && timerSalto > 1.4f) {
-            dinoVY    = VELOCIDAD_SALTO_LOBBY;
-            saltando  = true;
+            dinoVY     = VELOCIDAD_SALTO_LOBBY;
+            saltando   = true;
             timerSalto = 0f;
         }
         if (saltando) {
             dinoVY += GRAVEDAD_LOBBY * delta;
             dinoY  += dinoVY * delta;
-            if (dinoY <= Constantes.Y_PISO) {
-                dinoY    = Constantes.Y_PISO;
+            if (dinoY <= Constantes.Y_PISO_P1) {
+                dinoY    = Constantes.Y_PISO_P1;
                 dinoVY   = 0f;
                 saltando = false;
             }
@@ -147,16 +148,16 @@ public class PantallaEspera extends ScreenAdapter implements ClienteListener {
         }
         shape.end();
 
-        // piso
+        // linea del piso (pista superior del lobby)
         shape.begin(ShapeRenderer.ShapeType.Filled);
         shape.setColor(COL_PISO);
-        shape.rect(0, Constantes.Y_PISO - 4, W, 4f);
+        shape.rect(0, Constantes.Y_PISO_P1 - 4, W, 4f);
         shape.end();
 
         batch.setProjectionMatrix(cam.combined);
         batch.begin();
 
-        // dino saltando
+        // dino saltando en el lobby
         com.badlogic.gdx.graphics.Texture dinoTex;
         if (!saltando) {
             dinoTex = ((int) dinoAnimTick % 12 < 6) ? assets.dinoMov1 : assets.dinoMov2;
@@ -172,14 +173,14 @@ public class PantallaEspera extends ScreenAdapter implements ClienteListener {
         layout.setText(fontMedia, hiStr);
         fontMedia.draw(batch, hiStr, W - layout.width - 24, H - 24);
 
-        // título
+        // titulo
         fontGrande.setColor(COL_NEGRO);
         fontGrande.getData().setScale(3.5f);
         centrarTexto(fontGrande, "DINO CHROME", W, H - 88);
 
         batch.end();
 
-        // línea bajo el título
+        // linea bajo el titulo
         shape.begin(ShapeRenderer.ShapeType.Filled);
         shape.setColor(COL_PISO);
         shape.rect(W / 2f - 210, H - 148, 420, 2.5f);
@@ -187,11 +188,11 @@ public class PantallaEspera extends ScreenAdapter implements ClienteListener {
 
         batch.begin();
 
-        // subtítulo
+        // subtitulo
         fontChica.setColor(COL_GRIS);
         fontChica.getData().setScale(1.25f);
 
-        // estado de conexión
+        // estado de conexion
         if (!ClienteEstado.conectado) {
             // buscando servidor: puntos animados
             int dots = (int)(tiempo * 2f) % 4;
@@ -202,7 +203,6 @@ public class PantallaEspera extends ScreenAdapter implements ClienteListener {
             fontChica.setColor(COL_GRIS);
             fontChica.getData().setScale(1.15f);
             centrarTexto(fontChica, "Busca un servidor en la red local por broadcast UDP", W, H / 2f + 14f);
-
         } else {
             // conectado, esperando al otro jugador
             fontMedia.setColor(COL_NEGRO);
@@ -215,14 +215,15 @@ public class PantallaEspera extends ScreenAdapter implements ClienteListener {
             centrarTexto(fontChica, "Esperando al otro jugador" + ".".repeat(dots), W, H / 2f + 14f);
         }
 
-        // indicador de estado de conexion (pequeño circulo)
+        // indicador de estado (circulo pulsante si offline, solido si online)
         batch.end();
         shape.begin(ShapeRenderer.ShapeType.Filled);
         float circX = W / 2f - 10f;
         float circY = H / 2f - 35f;
-        if (ClienteEstado.conectado) shape.setColor(COL_NEGRO);
-        else {
-            float pulse = 0.45f + 0.45f * (float)Math.abs(Math.sin(tiempo * 4f));
+        if (ClienteEstado.conectado) {
+            shape.setColor(COL_NEGRO);
+        } else {
+            float pulse = 0.45f + 0.45f * (float) Math.abs(Math.sin(tiempo * 4f));
             shape.setColor(COL_GRIS_OSC.r, COL_GRIS_OSC.g, COL_GRIS_OSC.b, pulse);
         }
         shape.circle(circX, circY, 7f);

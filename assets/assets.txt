@@ -3,6 +3,8 @@ Cactus/cactuschico2.png
 Cactus/cactuscombinado.png
 Cactus/cactusgrande1.png
 Cactus/cactusgrande2.png
+Cactus/fondodia.png
+Cactus/fondonoche.png
 Dinosaurio2/dino2agachado1.png
 Dinosaurio2/dino2agachado2.png
 Dinosaurio2/dino2movimiento1.png

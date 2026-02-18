@@ -43,9 +43,6 @@ public class PantallaMenu extends ScreenAdapter {
     private float[] nubeSpd = new float[NUM_NUBES];
     private float[] nubeW   = new float[NUM_NUBES];
 
-    // cactus decorativos de fondo (se dibujan en la pista superior del menu)
-    private float[] cactusDecoX = { 140f, 480f, 760f, 1060f };
-
     // paleta Chrome
     private static final Color COL_BG      = new Color(0.95f, 0.95f, 0.95f, 1f);
     private static final Color COL_BLANCO  = new Color(1f,    1f,    1f,    1f);
